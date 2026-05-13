@@ -770,13 +770,13 @@ func CalcMdev(rtts []float32) float32 {
 		return 0.0
 	}
 
-	var sum float32 = 0
+	var sum float32
 	for _, rtt := range rtts {
 		sum += rtt
 	}
 	mean := sum / float32(n)
 
-	var sumSquaredDiff float64 = 0
+	var sumSquaredDiff float64
 	for _, rtt := range rtts {
 		diff := float64(rtt - mean)
 		sumSquaredDiff += diff * diff
