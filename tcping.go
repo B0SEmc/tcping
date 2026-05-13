@@ -5,12 +5,14 @@ import (
 	"bufio"
 	"context"
 	"flag"
+	"math"
 	"math/rand"
 	"net"
 	"net/netip"
 	"os"
 	"os/signal"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"syscall"
@@ -149,6 +151,8 @@ type rttResult struct {
 	min        float32
 	max        float32
 	average    float32
+	mdev       float32
+	jitter     float32
 	hasResults bool
 }
 
@@ -191,7 +195,7 @@ func (t *tcping) printStats() {
 	} else {
 		calcLongestUptime(t, time.Since(t.startOfUptime))
 	}
-	t.rttResults = calcMinAvgMaxRttTime(t.rtt)
+	t.rttResults = calcTimeStats(t.rtt)
 
 	t.printStatistics(*t)
 }
@@ -758,8 +762,58 @@ func newLongestTime(startTime time.Time, duration time.Duration) longestTime {
 	}
 }
 
-// calcMinAvgMaxRttTime calculates min, avg and max RTT values
-func calcMinAvgMaxRttTime(timeArr []float32) rttResult {
+// calcMdev calculates mean deviation from RTTs
+func CalcMdev(rtts []float32) float32 {
+	n := len(rtts)
+
+	if n < 2 {
+		return 0.0
+	}
+
+	var sum float32 = 0
+	for _, rtt := range rtts {
+		sum += rtt
+	}
+	mean := sum / float32(n)
+
+	var sumSquaredDiff float64 = 0
+	for _, rtt := range rtts {
+		diff := float64(rtt - mean)
+		sumSquaredDiff += diff * diff
+	}
+
+	variance := sumSquaredDiff / float64(n)
+
+	mdev := math.Sqrt(variance)
+
+	return float32(mdev)
+}
+
+// calcJitter calculates jitter from RTTs, ignoring 5% highest and 5% lowest
+func calcJitter(timeArr []float32) float32 {
+	n := len(timeArr)
+
+	if n < 2 {
+		return 0.0
+	}
+
+	sortedRtts := make([]float32, n)
+	copy(sortedRtts, timeArr)
+
+	slices.Sort(sortedRtts)
+
+	p5Index := int(float32(n) * 0.05)
+	p95Index := int(float32(n) * 0.95)
+
+	if p95Index >= n {
+		p95Index = n - 1
+	}
+
+	return sortedRtts[p95Index] - sortedRtts[p5Index]
+}
+
+// calcTimeStats calculates min, avg, max and jitter RTT values
+func calcTimeStats(timeArr []float32) rttResult {
 	var sum float32
 	var result rttResult
 
@@ -785,6 +839,8 @@ func calcMinAvgMaxRttTime(timeArr []float32) rttResult {
 		result.hasResults = true
 		result.average = sum / float32(arrLen)
 	}
+	result.jitter = calcJitter(timeArr)
+	result.mdev = CalcMdev(timeArr)
 
 	return result
 }

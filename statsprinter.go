@@ -142,16 +142,25 @@ func (p *colorPrinter) printStatistics(t tcping) {
 
 	if t.rttResults.hasResults {
 		colorYellow("rtt ")
+		colorLightCyan("jitter")
+		colorYellow(" (p95-p5): ")
+		colorLightCyan("%.3f", t.rttResults.jitter)
+		colorYellow(" ms\n")
+		colorYellow("rtt ")
 		colorGreen("min")
 		colorYellow("/")
 		colorCyan("avg")
 		colorYellow("/")
-		colorRed("max: ")
+		colorRed("max")
+		colorYellow("/")
+		colorLightBlue("mdev: ")
 		colorGreen("%.3f", t.rttResults.min)
 		colorYellow("/")
 		colorCyan("%.3f", t.rttResults.average)
 		colorYellow("/")
 		colorRed("%.3f", t.rttResults.max)
+		colorYellow("/")
+		colorLightBlue("%.3f", t.rttResults.mdev)
 		colorYellow(" ms\n")
 	}
 
@@ -351,8 +360,9 @@ func (p *plainPrinter) printStatistics(t tcping) {
 	}
 
 	if t.rttResults.hasResults {
-		fmt.Printf("rtt min/avg/max: ")
-		fmt.Printf("%.3f/%.3f/%.3f ms\n", t.rttResults.min, t.rttResults.average, t.rttResults.max)
+		fmt.Printf("rtt common band (p95-p5): %.3f ms\n", t.rttResults.jitter)
+		fmt.Printf("rtt min/avg/max/mdev: ")
+		fmt.Printf("%.3f/%.3f/%.3f/%.3f ms\n", t.rttResults.min, t.rttResults.average, t.rttResults.max, t.rttResults.mdev)
 	}
 
 	fmt.Printf("--------------------------------------\n")
@@ -536,6 +546,11 @@ type JSONData struct {
 	// Latency in ms for a successful probe messages.
 	Latency float32 `json:"latency,omitempty"`
 
+	// LatencyJitter is a latency stat for the stats event.
+	//
+	// It's a string on purpose, as we'd like to have exactly
+	// 3 decimal places without doing extra math.
+	LatencyJitter string `json:"latency_jitter,omitempty"`
 	// LatencyMin is a latency stat for the stats event.
 	//
 	// It's a string on purpose, as we'd like to have exactly
@@ -551,6 +566,11 @@ type JSONData struct {
 	// It's a string on purpose, as we'd like to have exactly
 	// 3 decimal places without doing extra math.
 	LatencyMax string `json:"latency_max,omitempty"`
+	// LatencyMdev is a latency stat for the stats event.
+	//
+	// It's a string on purpose, as we'd like to have exactly
+	// 3 decimal places without doing extra math.
+	LatencyMdev string `json:"latency_mdev,omitempty"`
 
 	// TotalDuration is a total amount of seconds that program was running.
 	//
@@ -726,9 +746,11 @@ func (p *jsonPrinter) printStatistics(t tcping) {
 	}
 
 	if t.rttResults.hasResults {
+		data.LatencyJitter = fmt.Sprintf("%.3f", t.rttResults.jitter)
 		data.LatencyMin = fmt.Sprintf("%.3f", t.rttResults.min)
 		data.LatencyAvg = fmt.Sprintf("%.3f", t.rttResults.average)
 		data.LatencyMax = fmt.Sprintf("%.3f", t.rttResults.max)
+		data.LatencyMdev = fmt.Sprintf("%.3f", t.rttResults.mdev)
 	}
 
 	if !t.endTime.IsZero() {

@@ -321,9 +321,11 @@ func (cp *csvPrinter) printStatistics(t tcping) {
 
 	if t.rttResults.hasResults {
 		statistics = append(statistics,
+			[]string{"RTT Jitter", fmt.Sprintf("%.3f ms", t.rttResults.jitter)},
 			[]string{"RTT Min", fmt.Sprintf("%.3f ms", t.rttResults.min)},
 			[]string{"RTT Avg", fmt.Sprintf("%.3f ms", t.rttResults.average)},
 			[]string{"RTT Max", fmt.Sprintf("%.3f ms", t.rttResults.max)},
+			[]string{"RTT Mdev", fmt.Sprintf("%.3f ms", t.rttResults.mdev)},
 		)
 	}
 
