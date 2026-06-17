@@ -65,6 +65,8 @@ longest_downtime_end,
 latency_min,
 latency_avg,
 latency_max,
+latency_jitter,
+latency_mdev,
 start_time,
 end_time,
 total_duration
@@ -83,13 +85,13 @@ FROM ` + fmt.Sprintf("%s WHERE event_type = '%s'", db.tableName, eventTypeStatis
 		longestUptimeStart, longestUptimeEnd           string
 		longestDowntime                                string
 		longestDowntimeStart, longestDowntimeEnd       string
-		lMin, lAvg, lMax                               float32
+		lMin, lAvg, lMax, lJitter, lMdev               float32
 		startTimestamp, endTimestamp                   time.Time
 		totalDuration                                  string
 	)
 
 	resFunc := func(stmt *sqlite.Stmt) error {
-		Equals(t, stmt.ColumnCount(), 27)
+		Equals(t, stmt.ColumnCount(), 29)
 		var err error
 
 		// addr
@@ -142,14 +144,18 @@ FROM ` + fmt.Sprintf("%s WHERE event_type = '%s'", db.tableName, eventTypeStatis
 		lAvg = float32(stmt.ColumnFloat(22))
 		// latency_max
 		lMax = float32(stmt.ColumnFloat(23))
+		// latency_jitter
+		lJitter = float32(stmt.ColumnFloat(24))
+		// latency_mdev
+		lMdev = float32(stmt.ColumnFloat(25))
 		// start_time
-		startTimestamp, err = time.Parse(timeFormat, stmt.ColumnText(24))
+		startTimestamp, err = time.Parse(timeFormat, stmt.ColumnText(26))
 		isNil(t, err)
 		// end_time
-		endTimestamp, err = time.Parse(timeFormat, stmt.ColumnText(25))
+		endTimestamp, err = time.Parse(timeFormat, stmt.ColumnText(27))
 		isNil(t, err)
 		// total_duration
-		totalDuration = stmt.ColumnText(26)
+		totalDuration = stmt.ColumnText(28)
 		return nil
 	}
 
@@ -161,6 +167,8 @@ FROM ` + fmt.Sprintf("%s WHERE event_type = '%s'", db.tableName, eventTypeStatis
 	stat.rttResults.min = toFixedFloat(stat.rttResults.min, 3)
 	stat.rttResults.average = toFixedFloat(stat.rttResults.average, 3)
 	stat.rttResults.max = toFixedFloat(stat.rttResults.max, 3)
+	stat.rttResults.jitter = toFixedFloat(stat.rttResults.jitter, 3)
+	stat.rttResults.mdev = toFixedFloat(stat.rttResults.mdev, 3)
 
 	Equals(t, addr, stat.userInput.ip.String())
 	Equals(t, sourceAddr, "source address")
@@ -181,6 +189,8 @@ FROM ` + fmt.Sprintf("%s WHERE event_type = '%s'", db.tableName, eventTypeStatis
 	Equals(t, lMin, stat.rttResults.min)
 	Equals(t, lAvg, stat.rttResults.average)
 	Equals(t, lMax, stat.rttResults.max)
+	Equals(t, lJitter, stat.rttResults.jitter)
+	Equals(t, lMdev, stat.rttResults.mdev)
 	Equals(t, startTimestamp.Format(timeFormat), stat.startTime.Format(timeFormat))
 	Equals(t, endTimestamp.Format(timeFormat), stat.endTime.Format(timeFormat))
 
@@ -293,6 +303,9 @@ func mockStats() tcping {
 			min:     2.832,
 			average: 3.8123,
 			max:     4.0932,
+			jitter:  1.1234,
+			mdev:    0.4567,
+			hasResults: true,
 		},
 
 		hostnameChanges: hostNameChange(),

@@ -763,7 +763,7 @@ func newLongestTime(startTime time.Time, duration time.Duration) longestTime {
 }
 
 // calcMdev calculates mean deviation from RTTs
-func CalcMdev(rtts []float32) float32 {
+func calcMdev(rtts []float32) float32 {
 	n := len(rtts)
 
 	if n < 2 {
@@ -840,7 +840,7 @@ func calcTimeStats(timeArr []float32) rttResult {
 		result.average = sum / float32(arrLen)
 	}
 	result.jitter = calcJitter(timeArr)
-	result.mdev = CalcMdev(timeArr)
+	result.mdev = calcMdev(timeArr)
 
 	return result
 }

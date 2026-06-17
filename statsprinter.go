@@ -27,6 +27,7 @@ var (
 	colorLightBlue   = color.FgLightBlue.Printf
 	colorLightGreen  = color.LightGreen.Printf
 	colorLightCyan   = color.LightCyan.Printf
+	colorMagenta     = color.Magenta.Printf
 )
 
 type colorPrinter struct {
@@ -143,24 +144,23 @@ func (p *colorPrinter) printStatistics(t tcping) {
 	if t.rttResults.hasResults {
 		colorYellow("rtt ")
 		colorLightCyan("jitter")
-		colorYellow(" (p95-p5): ")
+		colorYellow("/")
+		colorMagenta("mdev: ")
 		colorLightCyan("%.3f", t.rttResults.jitter)
+		colorYellow("/")
+		colorMagenta("%.3f", t.rttResults.mdev)
 		colorYellow(" ms\n")
 		colorYellow("rtt ")
 		colorGreen("min")
 		colorYellow("/")
 		colorCyan("avg")
 		colorYellow("/")
-		colorRed("max")
-		colorYellow("/")
-		colorLightBlue("mdev: ")
+		colorRed("max: ")
 		colorGreen("%.3f", t.rttResults.min)
 		colorYellow("/")
 		colorCyan("%.3f", t.rttResults.average)
 		colorYellow("/")
 		colorRed("%.3f", t.rttResults.max)
-		colorYellow("/")
-		colorLightBlue("%.3f", t.rttResults.mdev)
 		colorYellow(" ms\n")
 	}
 
@@ -360,9 +360,8 @@ func (p *plainPrinter) printStatistics(t tcping) {
 	}
 
 	if t.rttResults.hasResults {
-		fmt.Printf("rtt common band (p95-p5): %.3f ms\n", t.rttResults.jitter)
-		fmt.Printf("rtt min/avg/max/mdev: ")
-		fmt.Printf("%.3f/%.3f/%.3f/%.3f ms\n", t.rttResults.min, t.rttResults.average, t.rttResults.max, t.rttResults.mdev)
+		fmt.Printf("rtt jitter/mdev: %.3f/%.3f ms\n", t.rttResults.jitter, t.rttResults.mdev)
+		fmt.Printf("rtt min/avg/max: %.3f/%.3f/%.3f ms\n", t.rttResults.min, t.rttResults.average, t.rttResults.max)
 	}
 
 	fmt.Printf("--------------------------------------\n")

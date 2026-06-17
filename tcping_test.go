@@ -342,3 +342,88 @@ func TestSecondsToDuration(t *testing.T) {
 		})
 	}
 }
+
+func TestCalcMdev(t *testing.T) {
+	tests := []struct {
+		name string
+		rtts []float32
+		want float32
+	}{
+		{
+			name: "empty",
+			rtts: []float32{},
+			want: 0.0,
+		},
+		{
+			name: "single",
+			rtts: []float32{10.0},
+			want: 0.0,
+		},
+		{
+			name: "two identical",
+			rtts: []float32{10.0, 10.0},
+			want: 0.0,
+		},
+		{
+			name: "simple sequence",
+			rtts: []float32{10.0, 20.0, 30.0},
+			// mean = 20
+			// variance = ((10-20)^2 + (20-20)^2 + (30-20)^2) / 3 = (100 + 0 + 100) / 3 = 200/3 = 66.666
+			// sqrt(66.666) ≈ 8.1649658
+			want: 8.1649658,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := calcMdev(tt.rtts)
+			assert.InDelta(t, tt.want, got, 0.001)
+		})
+	}
+}
+
+func TestCalcJitter(t *testing.T) {
+	tests := []struct {
+		name string
+		rtts []float32
+		want float32
+	}{
+		{
+			name: "empty",
+			rtts: []float32{},
+			want: 0.0,
+		},
+		{
+			name: "single",
+			rtts: []float32{10.0},
+			want: 0.0,
+		},
+		{
+			name: "10 elements",
+			// 5% of 10 is 0
+			// 95% of 10 is 9
+			// index 9 is 90, index 0 is 0 -> 90
+			rtts: []float32{0.0, 10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0},
+			want: 90.0,
+		},
+		{
+			name: "100 elements",
+			// 1 to 100. sorted.
+			// 5% is index 5
+			// 95% is index 95
+			rtts: func() []float32 {
+				r := make([]float32, 100)
+				for i := 0; i < 100; i++ {
+					r[i] = float32(i)
+				}
+				return r
+			}(),
+			want: 90.0, // 95 - 5
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := calcJitter(tt.rtts)
+			assert.InDelta(t, tt.want, got, 0.001)
+		})
+	}
+}

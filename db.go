@@ -40,6 +40,8 @@ CREATE TABLE %s (
     latency_min REAL,
     latency_avg REAL,
     latency_max REAL,
+    latency_jitter REAL,
+    latency_mdev REAL,
 
 	total_duration TEXT,
     start_time DATETIME,
@@ -95,9 +97,11 @@ CREATE TABLE %s (
 	latency_min,
 	latency_avg,
 	latency_max,
+	latency_jitter,
+	latency_mdev,
 	start_time,
 	end_time,
-	total_duration) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`
+	total_duration) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`
 )
 
 // newDB creates a newDB with the given path and returns a pointer to the `database` struct
@@ -212,6 +216,8 @@ func (db *database) saveStats(tcping tcping) error {
 		fmt.Sprintf("%.3f", tcping.rttResults.min),
 		fmt.Sprintf("%.3f", tcping.rttResults.average),
 		fmt.Sprintf("%.3f", tcping.rttResults.max),
+		fmt.Sprintf("%.3f", tcping.rttResults.jitter),
+		fmt.Sprintf("%.3f", tcping.rttResults.mdev),
 		tcping.startTime.Format(timeFormat),
 		tcping.endTime.Format(timeFormat),
 		totalDuration,
